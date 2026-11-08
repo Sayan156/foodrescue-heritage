@@ -28,10 +28,10 @@ export default function useScrollStory({ sectionRef, stageRef, sequenceRef, anim
         const start = window.scrollY + section.getBoundingClientRect().top;
         window.scrollTo({ top: start + previousProgress * travel, behavior: 'instant' });
       }
-      const progress = animated && travel > 0 ? clamp(-section.getBoundingClientRect().top / travel) : 0;
+      const top = section.getBoundingClientRect().top;
+      const progress = animated && travel > 0 ? clamp(-top / travel) : 0;
       previousTravel = travel;
       previousProgress = progress;
-      const top = section.getBoundingClientRect().top;
       wasPinned = top <= 0 && -top <= travel;
       const index = progressToFrame(progress);
       const introOpacity = animated ? clamp((0.17 - progress) / 0.09) : 1;

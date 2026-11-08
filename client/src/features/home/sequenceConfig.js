@@ -9,11 +9,15 @@ export const frameUrl = (index, variant = 'desktop') => `${import.meta.env.BASE_
 export function sequenceOptions() {
   const mobile = window.matchMedia('(max-width: 767px)').matches;
   const constrained = mobile || navigator.connection?.saveData || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+  const variant = window.matchMedia(mobileSequenceQuery).matches ? 'mobile' : 'desktop';
+  const width = variant === 'mobile' ? sequence.mobileWidth : sequence.desktopWidth;
+  const height = variant === 'mobile' ? sequence.mobileHeight : Math.round(sequence.height * width / sequence.width);
   return {
-    variant: window.matchMedia(mobileSequenceQuery).matches ? 'mobile' : 'desktop',
-    radius: mobile ? 4 : constrained ? 3 : 5,
-    concurrency: constrained ? 2 : 3,
-    maxFrames: mobile ? 10 : constrained ? 8 : 12,
-    maxBytes: (mobile ? 16 : constrained ? 32 : 48) * 1024 * 1024,
+    variant,
+    frameBytes: width * height * 4,
+    radius: constrained ? 6 : 10,
+    concurrency: navigator.connection?.saveData ? 2 : constrained ? 3 : 4,
+    maxFrames: constrained ? 10 : 20,
+    maxBytes: (navigator.connection?.saveData ? 16 : constrained ? 24 : 64) * 1024 * 1024,
   };
 }

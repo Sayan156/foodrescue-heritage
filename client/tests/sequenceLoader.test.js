@@ -6,6 +6,33 @@ const settle = async () => { for (let i = 0; i < 10; i++) await new Promise(reso
 const poster = { naturalWidth: 768, naturalHeight: 432, index: 0 };
 const frameBytes = 768 * 432 * 4;
 
+test('portrait preloading settles when nine neighbors exceed the decoded memory budget', async () => {
+  const portraitBytes = 720 * 1280 * 4;
+  const requests = [];
+  const loader = createSequenceLoader({ count: 240, radius: 4, concurrency: 2, maxFrames: 10,
+    maxBytes: 16 * 1024 * 1024, frameBytes: portraitBytes,
+    load: async index => {
+      requests.push(index);
+      // Bound a regression so a reload loop fails rather than hanging the suite.
+      if (requests.length > 30) loader.setActive(false);
+      return { image: { index }, bytes: portraitBytes, dispose() {} };
+    },
+    onFrame() {},
+  });
+  try {
+    loader.start(); await settle();
+    assert.ok(requests.length <= 3, 'Only frames that fit the cache should be prefetched');
+    loader.seek(120); await settle();
+    const settledRequests = requests.length;
+    for (let i = 0; i < 10; i++) { loader.seek(120); await settle(); }
+    assert.equal(requests.length, settledRequests, 'Stationary scrolling must not reload evicted neighbors');
+    assert.ok(requests.length <= 6);
+    assert.equal(loader.stats().displayed, 120);
+    assert.equal(loader.stats().pending, 0);
+    assert.ok(loader.stats().bytes <= 16 * 1024 * 1024);
+  } finally { loader.dispose(); }
+});
+
 test('mobile cache remains bounded through the entire sequence and reverse scrolling', async () => {
   const requests = [], painted = [], released = [];
   const loader = createSequenceLoader({ count: 240, radius: 4, concurrency: 2, maxFrames: 10, maxBytes: 16 * 1024 * 1024,

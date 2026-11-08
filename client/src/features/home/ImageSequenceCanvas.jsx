@@ -5,23 +5,23 @@ import { frameUrl, mobileSequenceQuery, sequence } from './sequenceConfig.js';
 
 const ImageSequenceCanvas = forwardRef(function ImageSequenceCanvas({ animated, onStatus }, ref) {
   const canvasRef = useRef(null), posterRef = useRef(null), imageRef = useRef(null), raf = useRef(0);
+  const sizeRef = useRef({ width: 0, height: 0 });
   const draw = useCallback(() => {
     raf.current = 0;
     const canvas = canvasRef.current, frame = imageRef.current;
     if (!canvas || !frame) return;
     const image = frame.image, imageWidth = image.naturalWidth || image.width, imageHeight = image.naturalHeight || image.height;
     if (!imageWidth || !imageHeight) return;
-    const { width, height } = canvas.getBoundingClientRect();
+    const { width, height } = sizeRef.current;
     if (!width || !height) return;
     // Cap total pixels, rather than portrait height, to keep the sharp scene legible on phones.
     const ratio = Math.min(window.devicePixelRatio || 1, 1.5, Math.sqrt((sequence.width * sequence.height) / (width * height)));
     const pixelWidth = Math.max(1, Math.round(width * ratio)), pixelHeight = Math.max(1, Math.round(height * ratio));
     if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) { canvas.width = pixelWidth; canvas.height = pixelHeight; }
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext('2d', { alpha: false });
     if (!context) return;
     const cover = Math.max(pixelWidth / imageWidth, pixelHeight / imageHeight);
     const portrait = width / height < 1.35 && imageWidth > imageHeight;
-    context.clearRect(0, 0, pixelWidth, pixelHeight);
     if (portrait) {
       // Extend this same frame to the edges; keep both people in the sharp foreground.
       // The low-resolution backing store bounds the cost of the soft background pass.
@@ -65,7 +65,10 @@ const ImageSequenceCanvas = forwardRef(function ImageSequenceCanvas({ animated, 
   useEffect(() => { onStatus(status); }, [status, onStatus]);
   useEffect(() => {
     const canvas = canvasRef.current;
-    const observer = new ResizeObserver(scheduleDraw);
+    const observer = new ResizeObserver(([entry]) => {
+      sizeRef.current = { width: entry.contentRect.width, height: entry.contentRect.height };
+      scheduleDraw();
+    });
     observer.observe(canvas);
     return () => { observer.disconnect(); cancelAnimationFrame(raf.current); raf.current = 0; imageRef.current = null; };
   }, [scheduleDraw]);

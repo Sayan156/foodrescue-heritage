@@ -1,13 +1,16 @@
 // No React state on the hot path. The loader owns its requests and decoded images.
-export function createSequenceLoader({ count, load, onFrame, onUnavailable = () => {}, radius = 5, concurrency = 3, maxFrames = 12, maxBytes = 48 * 1024 * 1024 }) {
+export function createSequenceLoader({ count, load, onFrame, onUnavailable = () => {}, radius = 5, concurrency = 3, maxFrames = 12, maxBytes = 48 * 1024 * 1024, frameBytes = 4 * 1024 * 1024 }) {
   const cache = new Map(), pending = new Map(), failures = new Map();
   let target = 0, direction = 1, displayed = -1, active = true, disposed = false, seeded = false, bytes = 0;
 
   const wanted = () => {
+    // Reserve room for the displayed frame while its replacement loads. Never
+    // request a larger decoded window than the cache can actually retain.
+    const capacity = Math.max(1, Math.min(maxFrames, Math.floor(maxBytes / frameBytes)) - 1);
     const indices = [target];
     for (let distance = 1; distance <= radius; distance++) {
       for (const index of [target + direction * distance, target - direction * distance]) {
-        if (index >= 0 && index < count) indices.push(index);
+        if (index >= 0 && index < count && indices.length < capacity) indices.push(index);
       }
     }
     return indices;
@@ -18,8 +21,9 @@ export function createSequenceLoader({ count, load, onFrame, onUnavailable = () 
     bytes -= frame.bytes; frame.dispose?.(); cache.delete(index);
   }
   function evict() {
-    const candidates = [...cache.keys()].filter(index => index !== displayed && index !== target && index !== 0)
-      .sort((a, b) => Math.abs(b - target) - Math.abs(a - target));
+    const desired = new Set(wanted());
+    const candidates = [...cache.keys()].filter(index => index !== displayed && index !== target)
+      .sort((a, b) => Number(desired.has(a)) - Number(desired.has(b)) || Math.abs(b - target) - Math.abs(a - target));
     while ((cache.size > maxFrames || bytes > maxBytes) && candidates.length) remove(candidates.shift());
   }
   function emit() {
@@ -43,7 +47,8 @@ export function createSequenceLoader({ count, load, onFrame, onUnavailable = () 
       const timer = setTimeout(() => { request.timedOut = true; controller.abort(); }, 8000);
       Promise.resolve().then(() => load(index, controller.signal)).then(frame => {
         // A decoder can complete after abort. Never display or retain an obsolete result.
-        if (disposed || controller.signal.aborted || !active || !wanted().includes(index)) { frame.dispose?.(); return; }
+        if (disposed || controller.signal.aborted || !active || Math.abs(index - target) > radius * 2) { frame.dispose?.(); return; }
+        frameBytes = Math.max(frameBytes, frame.bytes);
         cache.set(index, frame); bytes += frame.bytes; failures.delete(index); emit();
       }).catch(() => {
         if (disposed || (controller.signal.aborted && !request.timedOut)) return;
@@ -62,14 +67,20 @@ export function createSequenceLoader({ count, load, onFrame, onUnavailable = () 
       if (disposed || cache.has(0)) return;
       seeded = true;
       cache.set(0, { image, bytes: image.naturalWidth * image.naturalHeight * 4 });
+      frameBytes = cache.get(0).bytes;
       bytes += cache.get(0).bytes; emit(); pump();
     },
     seek(index) {
       const next = Math.max(0, Math.min(count - 1, Math.round(index)));
       if (next !== target) direction = Math.sign(next - target);
       target = next;
-      const keep = new Set(wanted());
-      for (const [index, request] of pending) if (!keep.has(index)) request.controller.abort();
+      // Let nearby downloads finish instead of restarting them on every scroll
+      // event. Cancel distant work, and free one slot for an uncached target.
+      for (const [index, request] of pending) if (Math.abs(index - target) > radius * 2) request.controller.abort();
+      if (!cache.has(target) && !pending.has(target) && pending.size >= concurrency) {
+        const farthest = [...pending.keys()].sort((a, b) => Math.abs(b - target) - Math.abs(a - target))[0];
+        pending.get(farthest)?.controller.abort();
+      }
       emit(); pump();
     },
     setActive(value) {
@@ -90,7 +101,8 @@ export function createSequenceLoader({ count, load, onFrame, onUnavailable = () 
 }
 
 export async function decodeFrame(url, signal) {
-  const response = await fetch(url, { signal });
+  // Frame URLs carry the asset version, so a cached response is safe to reuse.
+  const response = await fetch(url, { signal, cache: 'force-cache' });
   if (!response.ok) throw new Error('Sequence frame unavailable');
   const blob = await response.blob();
   if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
