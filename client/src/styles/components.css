@@ -1,0 +1,47 @@
+/* Shared primitives are styled through semantic classes retained by the feature modules. */
+.button:focus-visible,.outline-btn:focus-visible,.icon-btn:focus-visible,.side-nav button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* Keep controls and feedback legible on dark surfaces. */
+html[data-theme="dark"] .outline-btn,
+html[data-theme="dark"] .icon-btn.bordered { border-color: var(--muted); }
+button:disabled { cursor: not-allowed; }
+.notice { scroll-margin-top: 24px; }
+.password-input { position: relative; }
+.field .password-input input {
+  min-height: 52px;
+  padding: 13px 58px 13px 44px;
+  border-radius: 10px;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.password-lock {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+  transition: color .18s ease;
+}
+.password-input:focus-within .password-lock { color: var(--accent); }
+.password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  transition: background .18s ease, color .18s ease;
+}
+.password-toggle:hover,
+.password-toggle[data-visible="true"] {
+  background: var(--surface);
+  color: var(--text);
+}
+.password-toggle:active svg { transform: scale(.92); }
+.password-toggle:disabled { opacity: .5; }

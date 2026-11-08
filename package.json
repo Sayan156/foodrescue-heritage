@@ -1,0 +1,9 @@
+{
+  "name": "foodrescue-heritage",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix client run build",
+    "start": "node scripts/start-production.mjs",
+    "test": "npm --prefix server test"
+  }
+}

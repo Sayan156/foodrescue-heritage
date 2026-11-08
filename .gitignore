@@ -1,0 +1,50 @@
+# Dependencies and generated builds. Keep package-lock.json files tracked.
+node_modules/
+dist/
+build/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# Local configuration and secrets. Only sanitized examples belong in Git.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.vercel/
+.netlify/
+.aws/
+.ssh/
+.codex/
+
+# Local browser profiles, screenshots, reports, and debugging artifacts.
+.browser-check*/
+/.homepage-baseline.json
+playwright-report/
+test-results/
+*.log
+*.pid
+
+# Original video frames stay local. The optimized runtime assets in
+# client/public/food-rescue-sequence/ MUST remain tracked for deployment.
+/food_recue_frames/
+/food_rescue_frames/
+/food_rescue_frames_mobile/
+
+# Local database exports and backups.
+/dump/
+/backups/
+*.bson
+*.sqlite
+*.sqlite3
+
+# Editor and operating-system files.
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini

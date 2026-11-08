@@ -1,0 +1,126 @@
+/* One shared layout; only the homepage background and positioning differ. */
+.topbar.heritage-nav {
+  --nav-cream: var(--bg);
+  --nav-brown: var(--text);
+  --nav-olive: #505c3c;
+  --nav-button-text: #fff9ed;
+  --nav-button-hover: #3e492e;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  width: 100%;
+  height: 64px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 max(24px, calc((100% - 1280px) / 2));
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--nav-cream);
+  color: var(--nav-brown);
+  box-shadow: none;
+  transition: background-color .2s ease, border-color .2s ease;
+}
+html[data-theme="dark"] .heritage-nav {
+  --nav-olive: #b4c196;
+  --nav-button-text: #211e19;
+  --nav-button-hover: #c5d1ac;
+}
+.topbar.heritage-nav-home {
+  position: fixed;
+  inset: 0 0 auto;
+}
+.topbar.heritage-nav-overlay {
+  background: transparent;
+  border-bottom-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.heritage-nav .brand {
+  gap: 8px;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--nav-brown);
+}
+.heritage-nav .brand-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  color: var(--nav-olive);
+  border-color: color-mix(in srgb, var(--nav-olive) 40%, transparent);
+}
+.heritage-nav .brand-icon svg { width: 17px; height: 17px; }
+.heritage-nav .brand-dot { color: var(--nav-olive); }
+.heritage-nav .main-nav { display: flex; align-items: center; gap: 28px; }
+.heritage-nav .main-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: .025em;
+  color: var(--muted);
+}
+.heritage-nav .main-nav a:hover,
+.heritage-nav .main-nav a.active { color: var(--nav-olive); }
+.heritage-nav .main-nav a.active { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1px; }
+.heritage-nav .nav-right { gap: 8px; }
+.heritage-nav .icon-btn { width: 44px; height: 44px; color: var(--nav-brown); border-radius: 4px; }
+.heritage-nav .icon-btn:hover { background: color-mix(in srgb, var(--nav-olive) 12%, transparent); }
+.heritage-nav .nav-right .button {
+  min-height: 44px;
+  padding: 9px 15px;
+  gap: 9px;
+  font-size: 12px;
+  border-radius: 4px;
+  background: var(--nav-olive);
+  border-color: var(--nav-olive);
+  color: var(--nav-button-text);
+}
+.heritage-nav .nav-right .button:hover { background: var(--nav-button-hover); border-color: var(--nav-button-hover); filter: none; transform: none; }
+.heritage-nav .nav-right .button svg { display: block; }
+.heritage-nav :is(a, button):focus-visible { outline: 2px solid var(--nav-olive); outline-offset: 3px; }
+.heritage-nav .mobile-menu { display: none; }
+
+@media (max-width: 960px) {
+  .topbar.heritage-nav { gap: 12px; padding-inline: 20px; }
+  .heritage-nav .main-nav { gap: 18px; }
+}
+@media (max-width: 860px) {
+  .topbar.heritage-nav { height: 60px; padding-inline: 16px; gap: 8px; }
+  .heritage-nav .brand { font-size: 26px; }
+  .heritage-nav .mobile-menu { display: grid; }
+  .heritage-nav .main-nav { display: none; }
+  .heritage-nav .main-nav.open {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 12px 16px;
+    max-height: calc(100dvh - 60px);
+    overflow-y: auto;
+    background: var(--nav-cream);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 18px #352d2410;
+  }
+  .heritage-nav .main-nav a { width: 100%; padding: 10px 12px; font-size: 13px; }
+  .heritage-nav .main-nav a:hover { background: color-mix(in srgb, var(--nav-olive) 12%, transparent); }
+  .heritage-nav .nav-right { gap: 2px; }
+}
+@media (max-width: 480px) {
+  .topbar.heritage-nav { padding-inline: 12px; gap: 4px; }
+  .heritage-nav .brand { font-size: 24px; }
+  .heritage-nav .brand-icon { display: none; }
+  .heritage-nav .nav-right { gap: 0; }
+  .heritage-nav .nav-right .button { padding-inline: 10px; gap: 5px; font-size: 11px; }
+  .heritage-nav .nav-right .button svg { display: none; }
+}

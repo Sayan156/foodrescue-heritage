@@ -1,0 +1,14 @@
+{
+    "frameCount":  240,
+    "prefix":  "frame_",
+    "digits":  4,
+    "extension":  ".jpg",
+    "width":  1280,
+    "height":  720,
+    "basePath":  "food-rescue-sequence",
+    "desktopWidth":  1280,
+    "mobileWidth":  720,
+    "mobileHeight":  1280,
+    "mobileExtension":  ".jpg",
+    "version":  "f64c1cf37b68463285f614691312c86f"
+}
