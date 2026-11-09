@@ -10,6 +10,23 @@ import { loginSchema } from '../src/modules/auth/auth.schemas.js';
 import { createTerminalInput } from './lib/terminal-input.js';
 
 class SetupError extends Error {}
+let setupStage = 'reading configuration';
+
+function databaseErrorHint(error) {
+  const errors = [error, error.cause, ...Array.from(error.reason?.servers?.values?.() || [], server => server.error)].filter(Boolean);
+  if (errors.some(item => item.code === 18 || /authentication failed|bad auth/i.test(item.message || ''))) {
+    return 'Authentication failed. Check the Atlas database username and password (not your Atlas login), and URL-encode reserved characters in the password.';
+  }
+  if (errors.some(item => item.code === 13)) return 'The database user lacks permission. Grant it readWrite access to the selected application database.';
+  if (errors.some(item => ['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ETIMEOUT'].includes(item.code) && /querySrv|queryTxt|getaddrinfo/.test(item.syscall || ''))) {
+    return 'DNS lookup failed. Check the cluster hostname, your internet connection, and your DNS resolver.';
+  }
+  if (errors.some(item => /ServerSelection|Network/.test(item.name || ''))) {
+    return 'Could not reach MongoDB. Check that the Atlas cluster is running, your current IP is allowed in Atlas Network Access, and your firewall permits the connection.';
+  }
+  if (error.name === 'MongoParseError') return 'Invalid MongoDB connection string. Check its format and URL-encode reserved characters in the password.';
+  return 'Check the database connection and permissions. If creating the email index, check for existing duplicate emails or a conflicting index.';
+}
 const usage = 'Usage: node scripts/create-admin.js [--env-file .env.atlas]\nEmail, name, and a hidden password are requested interactively.';
 const nameSchema = z.string().trim().min(2).max(100);
 const passwordSchema = z.string().min(12, 'Use at least 12 characters.').max(128)
@@ -59,6 +76,7 @@ async function main() {
   try {
     const email = validate(loginSchema.shape.email, await terminal.ask('Admin email: '), 'Email');
     const name = validate(nameSchema, (await terminal.ask('Admin name [FoodRescue Administrator]: ')) || 'FoodRescue Administrator', 'Name');
+    setupStage = 'connecting to MongoDB';
     await mongoose.connect(target.uri, {
       serverSelectionTimeoutMS: 10000, connectTimeoutMS: 10000, maxPoolSize: 2,
       autoIndex: false, autoCreate: false,
@@ -66,6 +84,7 @@ async function main() {
     terminal.throwIfAborted();
     if (mongoose.connection.name !== target.name) throw new SetupError('Connected database does not match the selected database.');
     console.log(`Connected host: ${mongoose.connection.host}\nDatabase: ${mongoose.connection.name}`);
+    setupStage = 'checking for an existing account';
     if (await User.exists({ email })) throw new SetupError('Account already exists. No password or role was changed.');
 
     password = validate(passwordSchema, await terminal.ask('Admin password (hidden, at least 12 characters): ', { secret: true }), 'Password');
@@ -80,8 +99,10 @@ async function main() {
     password = '';
     terminal.throwIfAborted();
     // Ensure uniqueness even when two setup processes run on a fresh database.
+    setupStage = 'creating the unique email index';
     await User.collection.createIndex({ email: 1 }, { unique: true });
     terminal.throwIfAborted();
+    setupStage = 'saving the admin account';
     await User.create({ name, email, passwordHash, role: 'admin', status: 'verified' });
     console.log('Admin created successfully. Sign in through the normal FoodRescue login page.');
   } finally {
@@ -96,6 +117,6 @@ main().catch(error => {
   if (error instanceof SetupError) console.error(error.message);
   else if (error.name === 'AbortError') console.error('Admin setup interrupted. Rerunning will refuse an existing account.');
   else if (error.code === 11000) console.error('Duplicate email detected. No existing account was changed.');
-  else console.error('Admin setup failed. Check the Atlas credentials, network access, database permissions, and email index.');
+  else console.error(`Admin setup failed while ${setupStage}. ${databaseErrorHint(error)}`);
   process.exitCode = error.name === 'AbortError' ? 130 : 1;
 });
