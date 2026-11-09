@@ -1,17 +1,18 @@
 ﻿/* Landing-page presentation only. The existing application styles and routes are untouched. */
-.home-page { --home-olive: #505c3c; --home-olive-hover: #3e492e; --home-cream: #f5eee1; }
+.home-page { --home-olive: #505c3c; --home-olive-hover: #3e492e; --home-cream: #f5eee1; overflow-anchor: none; display: flow-root; }
 .home-page svg { flex-shrink: 0; }
-.scroll-story { --story-travel: 3000px; --story-stage-height: 100svh; position: relative; height: calc(var(--story-stage-height) + var(--story-travel)); background: #302c23; }
-@supports (height: 100dvh) { .scroll-story { --story-stage-height: 100dvh; } }
+.scroll-story { --story-travel: 3000px; --story-stage-height: 100vh; --story-toolbar-space: 0px; position: relative; isolation: isolate; height: calc(var(--story-stage-height) + var(--story-travel)); background: #302c23; }
+/* Keep the canvas and scroll runway stable while mobile browser controls move. */
+@supports (height: 100lvh) { .scroll-story { --story-stage-height: 100lvh; --story-toolbar-space: max(0px, calc(100lvh - 100dvh)); } }
 .story-stage { position: sticky; top: 0; height: var(--story-stage-height); width: 100%; overflow: clip; color: var(--home-cream); }
 .story-visual, .story-poster, .story-canvas, .story-image-fallback { position: absolute; inset: 0; width: 100%; height: 100%; }
 .story-visual { overflow: hidden; background: #302c23; }
-.story-poster img { position: relative; width: 100%; height: 100%; object-fit: cover; }
-.story-canvas { opacity: 0; }
+.story-poster img { position: relative; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.story-canvas { display: block; opacity: 0; }
 .story-canvas[data-painted="true"] { opacity: 1; }
 .story-image-fallback { display: grid; place-items: center; color: #b5b796; background: #353928; }
 .story-image-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #211b1412, transparent 36%, transparent 48%, #211b14ba); opacity: var(--story-shade, 1); }
-.story-opening, .story-ending { position: absolute; bottom: max(7vh, 32px); left: max(5.5vw, 24px); right: 24px; pointer-events: none; will-change: opacity, transform; }
+.story-opening, .story-ending { position: absolute; bottom: calc(max(7svh, 32px) + var(--story-toolbar-space)); left: max(5.5vw, 24px); right: 24px; pointer-events: none; will-change: opacity, transform; }
 .story-opening h1 { font-size: clamp(2.8rem, 5.8vw, 6rem); line-height: 1; letter-spacing: -.04em; font-weight: 500; margin: 0; max-width: 850px; text-wrap: balance; text-shadow: 0 2px 30px #211b1438; }
 .story-opening h1 em, .home-page .story-ending h2 em { color: #eee5c7; }
 .home-page .story-ending h2 { font-size: clamp(2.8rem, 4.8vw, 4.7rem); line-height: 1; letter-spacing: -.035em; font-weight: 500; margin: 0 0 25px; color: #fff7e8; text-shadow: 0 2px 30px #211b1438; }
@@ -23,10 +24,10 @@
 .home-button:hover { background: var(--home-olive-hover); border-color: var(--home-olive-hover); }
 .home-button-secondary { background: #f5eee1f0; border-color: #f5eee1c4; color: #383b2b; }
 .home-button-secondary:hover { background: #fff9ed; border-color: #fff9ed; }
-.story-static-actions { position: absolute; left: max(5.5vw, 24px); bottom: max(6vh, 24px); }
+.story-static-actions { position: absolute; left: max(5.5vw, 24px); bottom: calc(max(6svh, 24px) + var(--story-toolbar-space)); }
 .scroll-story[data-animated="false"] { height: var(--story-stage-height); }
 .scroll-story[data-animated="false"] .story-stage { position: relative; }
-.scroll-story[data-animated="false"] .story-opening { bottom: max(18vh, 120px); }
+.scroll-story[data-animated="false"] .story-opening { bottom: calc(max(18svh, 120px) + var(--story-toolbar-space)); }
 .scroll-story[data-animated="false"] .story-ending { display: none; }
 
 .home-section { width: min(calc(100% - 96px), 1200px); margin-inline: auto; }
@@ -46,20 +47,15 @@
 .home-invitation h2 { font-size: clamp(2.4rem, 4.2vw, 4rem); margin-bottom: 24px; }
 .home-invitation > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px 35px; }
 
-/* Portrait: a full-bleed extension surrounds the complete scene. No people are cropped away. */
-@media (max-aspect-ratio: 27/20) {
-  .story-poster::before { content: ''; position: absolute; inset: -6%; background-image: var(--story-poster); background-position: center; background-size: cover; filter: blur(18px) brightness(.78); }
-  .story-poster img { object-fit: contain; object-position: center 43%; }
-}
 @media (max-width: 767px) {
   .scroll-story { --story-travel: 1800px; }
-  .story-opening, .story-ending { left: 24px; right: 24px; bottom: max(8vh, 28px); }
+  .story-opening, .story-ending { left: 24px; right: 24px; bottom: calc(max(8svh, 28px) + var(--story-toolbar-space)); }
   .story-opening h1 { font-size: clamp(39px, 10.8vw, 56px); line-height: 1.03; }
   .home-page .story-ending h2 { font-size: clamp(39px, 10.5vw, 52px); margin-bottom: 24px; }
   .home-actions { gap: 9px; }
   .home-button { min-height: 48px; padding: 12px 14px; font-size: 11px; gap: 11px; }
   .story-static-actions { left: 24px; right: 24px; }
-  .scroll-story[data-animated="false"] .story-opening { bottom: max(22vh, 145px); }
+  .scroll-story[data-animated="false"] .story-opening { bottom: calc(max(22svh, 145px) + var(--story-toolbar-space)); }
   .home-section { width: calc(100% - 44px); }
   .home-purpose { grid-template-columns: 1fr; gap: 35px; padding-block: 65px 50px; }
   .home-purpose h2 { font-size: clamp(2.5rem, 9.8vw, 3.5rem); }
@@ -71,11 +67,6 @@
   .home-process { padding-bottom: 45px; }
   .home-invitation { padding: 50px 24px; }
   .home-invitation h2 { line-height: 1.15; }
-}
-@media (max-width: 767px) and (orientation: portrait) {
-  .story-poster::before { background-image: var(--story-mobile-poster); }
-  .story-visual[data-mobile-portrait="true"] .story-poster::before { display: none; }
-  .story-visual[data-mobile-portrait="true"] .story-poster img { object-fit: cover; object-position: center; }
 }
 @media (max-height: 550px) and (min-aspect-ratio: 27/20) {
   .story-opening, .story-ending { bottom: 25px; }

@@ -21,34 +21,10 @@ const ImageSequenceCanvas = forwardRef(function ImageSequenceCanvas({ animated, 
     const context = canvas.getContext('2d', { alpha: false });
     if (!context) return;
     const cover = Math.max(pixelWidth / imageWidth, pixelHeight / imageHeight);
-    const portrait = width / height < 1.35 && imageWidth > imageHeight;
-    if (portrait) {
-      // Extend this same frame to the edges; keep both people in the sharp foreground.
-      // The low-resolution backing store bounds the cost of the soft background pass.
-      const w = imageWidth * cover * 1.12, h = imageHeight * cover * 1.12;
-      context.save();
-      context.filter = `blur(${18 * ratio}px)`;
-      context.drawImage(image, (pixelWidth - w) / 2, (pixelHeight - h) / 2, w, h);
-      context.restore();
-      context.fillStyle = 'rgba(35, 31, 22, 0.22)';
-      context.fillRect(0, 0, pixelWidth, pixelHeight);
-      const scale = pixelWidth / imageWidth;
-      const foregroundHeight = imageHeight * scale;
-      const y = (pixelHeight - foregroundHeight) * 0.43;
-      // Feather only the outer strips; the basket and people remain sharp.
-      const edge = Math.min(20 * ratio, foregroundHeight * 0.06), sourceEdge = edge / scale;
-      context.drawImage(image, 0, sourceEdge, imageWidth, imageHeight - sourceEdge * 2, 0, y + edge, pixelWidth, foregroundHeight - edge * 2);
-      for (let strip = 0; strip < 8; strip++) {
-        const offset = strip * edge / 8, sourceOffset = offset / scale;
-        context.globalAlpha = (strip + 0.5) / 8;
-        context.drawImage(image, 0, sourceOffset, imageWidth, sourceEdge / 8, 0, y + offset, pixelWidth, edge / 8);
-        context.drawImage(image, 0, imageHeight - sourceOffset - sourceEdge / 8, imageWidth, sourceEdge / 8, 0, y + foregroundHeight - offset - edge / 8, pixelWidth, edge / 8);
-      }
-      context.globalAlpha = 1;
-    } else {
-      const w = imageWidth * cover, h = imageHeight * cover;
-      context.drawImage(image, (pixelWidth - w) / 2, (pixelHeight - h) / 2, w, h);
-    }
+    // Fill the viewport directly with the selected portrait or widescreen frame.
+    // Preserve proportions, with no blurred duplicate layers or letterbox bands.
+    const w = imageWidth * cover, h = imageHeight * cover;
+    context.drawImage(image, (pixelWidth - w) / 2, (pixelHeight - h) / 2, w, h);
     canvas.dataset.frame = String(frame.index + 1);
     canvas.dataset.painted = 'true';
   }, []);
@@ -73,7 +49,7 @@ const ImageSequenceCanvas = forwardRef(function ImageSequenceCanvas({ animated, 
     return () => { observer.disconnect(); cancelAnimationFrame(raf.current); raf.current = 0; imageRef.current = null; };
   }, [scheduleDraw]);
 
-  return <div className="story-visual" data-status={status} data-mobile-portrait={sequence.mobileHeight > sequence.mobileWidth} style={{ '--story-poster': `url("${frameUrl(0)}")`, '--story-mobile-poster': `url("${frameUrl(0, 'mobile')}")` }}>
+  return <div className="story-visual" data-status={status}>
     <div className="story-image-fallback" aria-hidden="true"><Leaf size={100} strokeWidth={0.6}/></div>
     <picture className="story-poster">
       <source media={mobileSequenceQuery} srcSet={frameUrl(0, 'mobile')} width={sequence.mobileWidth} height={sequence.mobileHeight}/>

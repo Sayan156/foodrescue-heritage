@@ -5,6 +5,7 @@ import { frameUrl, mobileSequenceQuery, sequence, sequenceOptions } from './sequ
 export default function useImageSequence({ posterRef, enabled, onFrame, onReset }) {
   const loader = useRef(null), frameCallback = useRef(onFrame), requested = useRef(0), active = useRef(true);
   const resetCallback = useRef(onReset);
+  const hasVisibleFrame = useRef(false);
   const [status, setStatus] = useState('loading');
   const [mobile, setMobile] = useState(() => window.matchMedia(mobileSequenceQuery).matches);
   frameCallback.current = onFrame;
@@ -12,9 +13,16 @@ export default function useImageSequence({ posterRef, enabled, onFrame, onReset 
   const seed = useCallback(() => {
     const image = posterRef.current;
     if (!image?.naturalWidth) return;
-    setStatus('ready');
+    hasVisibleFrame.current = true;
+    setStatus(current => current === 'fallback' ? current : 'ready');
   }, [posterRef]);
-  const fail = useCallback(() => setStatus('fallback'), []);
+  const fail = useCallback(() => {
+    // A late image error must not remove the scroll runway underneath the user.
+    // Keep the last picture and allow subsequent frames to recover normally.
+    const story = posterRef.current?.closest('.scroll-story');
+    if (hasVisibleFrame.current || (story && story.getBoundingClientRect().top < 0)) return;
+    setStatus('fallback');
+  }, [posterRef]);
 
   useEffect(() => {
     const query = window.matchMedia(mobileSequenceQuery);
@@ -31,7 +39,11 @@ export default function useImageSequence({ posterRef, enabled, onFrame, onReset 
       ...options, count: sequence.frameCount,
       load: (index, signal) => decodeFrame(frameUrl(index, options.variant), signal),
       onFrame: (image, index) => {
-        if (!receivedFrame) { receivedFrame = true; setStatus('ready'); }
+        hasVisibleFrame.current = true;
+        if (!receivedFrame) {
+          receivedFrame = true;
+          setStatus(current => current === 'fallback' ? current : 'ready');
+        }
         frameCallback.current(image, index);
       },
       onUnavailable: fail,

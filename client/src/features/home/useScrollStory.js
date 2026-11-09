@@ -18,19 +18,24 @@ export default function useScrollStory({ sectionRef, stageRef, sequenceRef, anim
     const section = sectionRef.current, stage = stageRef.current;
     const opening = section.querySelector('[data-story-opening]');
     const ending = section.querySelector('[data-story-ending]');
+    const compactQuery = window.matchMedia('(max-width: 767px)');
+    let previousCompact = compactQuery.matches;
     let raf = 0, visible = true, previousTravel = null, previousProgress = 0, wasPinned = false;
     function update() {
       raf = 0;
       const travel = section.offsetHeight - stage.offsetHeight;
+      const compact = compactQuery.matches;
       // Desktop and phone have different scroll distances. Keep the same scene
       // when crossing that breakpoint, without changing normal scroll behavior.
-      if (animated && previousTravel !== null && travel !== previousTravel && wasPinned) {
+      // Browser toolbar/keyboard changes must never trigger a scroll correction.
+      if (animated && compact !== previousCompact && previousTravel !== null && wasPinned) {
         const start = window.scrollY + section.getBoundingClientRect().top;
         window.scrollTo({ top: start + previousProgress * travel, behavior: 'instant' });
       }
       const top = section.getBoundingClientRect().top;
       const progress = animated && travel > 0 ? clamp(-top / travel) : 0;
       previousTravel = travel;
+      previousCompact = compact;
       previousProgress = progress;
       wasPinned = top <= 0 && -top <= travel;
       const index = progressToFrame(progress);
