@@ -105,10 +105,18 @@ Open `http://localhost:5173`. `VITE_API_URL` defaults to `/api`. Vite forwards i
 In the `server` directory, with `.env` configured:
 
 ```bash
-node scripts/create-admin.js admin@example.com 'Use-A-Long-Random-Password-123' "Platform Admin"
+node scripts/create-admin.js
 ```
 
-Use a unique password. Then register donor and NGO accounts, verify them through the admin workspace, and run the donation-to-delivery flow.
+The script prompts for email, name, and a hidden password twice, then asks you to confirm the connected database before creating a verified admin. Use a unique password of at least 12 characters and no more than 72 UTF-8 bytes. Existing accounts are never overwritten or promoted.
+
+For Atlas, keep its connection string in an ignored `server/.env.atlas` file, with an explicit database name such as `/foodrescue`. From the repository root, run:
+
+```sh
+npm --prefix server run create-admin -- --env-file .env.atlas
+```
+
+The explicit file takes precedence over a shell's `MONGODB_URI`. Keep this script as a one-time local operator command, never a build step or public endpoint. If you migrate an existing admin account to Atlas, use that login instead of creating it again. Then register donor and NGO accounts, verify them through the admin workspace, and run the donation-to-delivery flow.
 
 ## Feature and API map
 
